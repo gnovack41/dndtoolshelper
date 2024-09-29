@@ -1,0 +1,65 @@
+name: Tests
+
+on: [ push, pull_request ]
+
+env:
+  PIPENV_VENV_IN_PROJECT: 1
+  PIPENV_IGNORE_VIRTUALENVS: 1
+
+jobs:
+  run-tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+
+    services:
+      # https://docs.github.com/en/actions/configuring-and-managing-workflows/creating-postgresql-service-containers#running-jobs-directly-on-the-runner-machine
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Pipenv
+        run: |
+          pip install --upgrade pipenv
+          pipenv --version
+
+      - name: Cache Pipenv dependencies
+        id: cache-pipenv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: ${{ runner.os }}-pipenv-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('Pipfile.lock') }}
+
+      - name: Install Pipenv dependencies
+        if: steps.cache-pipenv.outputs.cache-hit != 'true'
+        run: pipenv install --deploy --dev
+
+      - name: Check for missing Django migrations
+        env:
+          DJANGO_SETTINGS_MODULE: tests.settings
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+        run: pipenv run python manage.py makemigrations --dry-run --check --no-input
+
+      - name: Run test suite with coverage
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+        run: pipenv run pytest

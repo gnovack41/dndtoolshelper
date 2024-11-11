@@ -1,7 +1,6 @@
 from django.db import models
 
 from dndtoolshelper.api.models.base_model import BaseModel
-from dndtoolshelper.utils.models import unique_together_constraint
 
 
 class Item(BaseModel):
@@ -12,14 +11,12 @@ class Item(BaseModel):
         VERY_RARE = 'very_rare', 'Very Rare'
         LEGENDARY = 'legendary', 'Legendary'
         ARTIFACT = 'artifact', 'Artifact'
-
-    class Origin(models.TextChoices):
-        FiveETools = '5ETOOLS', '5eTools'
-        DNDBEYOND = 'DNDBEYOND', 'DndBeyond'
+        VARIES = 'varies', 'Varies'
 
     name = models.CharField()
-    source = models.CharField(null=True, blank=True, default=None)
+    source = models.ForeignKey('Source', null=True, default=None, on_delete=models.SET_NULL, related_name='items')
     rarity = models.CharField(choices=Rarity.choices, null=True)
     description = models.TextField(null=True, blank=True, default=None)
+    image_url = models.URLField(null=True, blank=True, default=None)
 
-    dndbeyond_id = models.IntegerField(null=True, default=None)
+    dndbeyond_id = models.IntegerField(null=True, default=None, unique=True)

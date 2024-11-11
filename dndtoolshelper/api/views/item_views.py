@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from rest_framework.decorators import action
-from rest_framework.exceptions import APIException
-from rest_framework.filters import BaseFilterBackend
+from rest_framework.filters import BaseFilterBackend, SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
@@ -19,29 +18,33 @@ class ItemFilter(BaseFilterBackend):
         serializer = self.ItemFilterSerializer(data=request.query_params, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        if 'source' in request.query_params:
-            queryset = queryset.filter(source__iexact=request.query_params['source'])
+        if 'source' in serializer.validated_data:
+            queryset = queryset.filter(source__name__iexact=serializer.validated_data['source'])
 
-        if 'rarity' in request.query_params:
-            queryset = queryset.filter(rarity__iexact=request.query_params['rarity'])
+        if 'rarity' in serializer.validated_data:
+            queryset = queryset.filter(rarity__iexact=serializer.validated_data['rarity'])
 
         return queryset
 
 
 class ItemViewSet(ReadOnlyModelViewSet):
-    queryset = Item.objects.all()
+    queryset = Item.objects.select_related('source').order_by('name').all()
 
     serializer_class = ItemSerializer
     pagination_class = APIPagination
 
     search_fields = ['name']
 
-    filter_backends = [ItemFilter]
+    filter_backends = [SearchFilter, ItemFilter]
 
     @action(methods=['GET'], detail=False)
     def rarities(self, request):
-        return Response(list(self.queryset.filter(rarity__isnull=False).values_list('rarity', flat=True).distinct()))
+        return Response(Item.Rarity.values)
 
     @action(methods=['GET'], detail=False)
     def sources(self, request):
-        return Response(list(self.queryset.filter(source__isnull=False).values_list('source', flat=True).distinct()))
+        return Response(list(
+            self.queryset.filter(source__isnull=False)
+            .values_list('source__name', flat=True)
+            .order_by('source__name').distinct('source__name')
+        ))

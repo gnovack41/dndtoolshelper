@@ -136,3 +136,4 @@ GRAPHENE = {
 REQUESTS_TIMEOUT = config('REQUESTS_TIMEOUT', default=10.0, cast=float)
 
 DND_API_URL = config('DND_API_URL')
+DND_BEYOND_URL = config('DND_BEYOND_URL')

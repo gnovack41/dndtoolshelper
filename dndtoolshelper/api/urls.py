@@ -4,7 +4,7 @@ from rest_framework import routers
 
 from dndtoolshelper.api import views
 
-router = routers.SimpleRouter()
+router = routers.SimpleRouter(trailing_slash=False)
 router.register(r'items', views.ItemViewSet)
 
 urlpatterns = [

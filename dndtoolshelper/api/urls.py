@@ -6,6 +6,7 @@ from dndtoolshelper.api import views
 
 router = routers.SimpleRouter(trailing_slash=False)
 router.register(r'items', views.ItemViewSet)
+router.register(r'characters', views.CharacterViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

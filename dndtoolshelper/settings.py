@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'dndtoolshelper.api',
+    'dndtoolshelper.dndbeyond',
     'graphene_django',
     'django_filters',
 ]

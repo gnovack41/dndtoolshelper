@@ -9,6 +9,7 @@ class CharacterSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
         fields = read_only_fields + [
             'name',
+            'dndbeyond_id',
             'avatar_url',
             'dnd_class',
             'race',
@@ -24,3 +25,13 @@ class CharacterSerializer(serializers.ModelSerializer):
 
 class CharacterImportSerializer(serializers.Serializer):
     character_dndbeyond_id = serializers.CharField()
+
+
+class CharacterSyncItemSerializer(serializers.Serializer):
+    class AddedItemSerializer(serializers.Serializer):
+        dndbeyond_id = serializers.CharField()
+        quantity = serializers.IntegerField()
+
+    character_dndbeyond_id = serializers.CharField()
+    items = AddedItemSerializer(many=True)
+

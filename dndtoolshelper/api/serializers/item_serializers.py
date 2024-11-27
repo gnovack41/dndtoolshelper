@@ -17,6 +17,7 @@ class ItemSerializer(serializers.ModelSerializer):
             'rarity',
             'image_url',
             'description',
+            'dndbeyond_id',
         ]
         fields = read_only_fields
 

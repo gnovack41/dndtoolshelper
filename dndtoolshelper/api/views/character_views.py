@@ -1,3 +1,4 @@
+from requests import HTTPError
 from rest_framework import serializers, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -6,7 +7,8 @@ from rest_framework.viewsets import ModelViewSet
 from dndtoolshelper.api.logic.character_logic import get_character_from_dndbeyond
 from dndtoolshelper.api.models import Character
 from dndtoolshelper.api.serializers import CharacterSerializer
-from dndtoolshelper.api.serializers.character_serializers import CharacterImportSerializer
+from dndtoolshelper.api.serializers.character_serializers import CharacterImportSerializer, CharacterSyncItemSerializer
+from dndtoolshelper.services.dndbeyond import dndbeyond_api
 
 
 class CharacterViewSet(ModelViewSet):
@@ -53,3 +55,24 @@ class CharacterViewSet(ModelViewSet):
         )
 
         return Response(CharacterSerializer(character).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['POST'])
+    def sync_items(self, request):
+        serializer = CharacterSyncItemSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            dndbeyond_api.characters.add_item(
+                character_id=serializer.validated_data['character_dndbeyond_id'],
+                items=[{
+                    'item_id': item['dndbeyond_id'],
+                    'quantity': item['quantity'],
+                } for item in serializer.validated_data['items']],
+            )
+        except HTTPError as e:
+            if e.response.status_code in [400, 404]:
+                raise serializers.ValidationError({'invalid_entities': ['Character or item not found']})
+
+            raise
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class DNDBeyondAPIClient:
     def __init__(self):
-        self.token = None
+        self.token: str | None = None
 
     def request(
         self,
@@ -42,7 +42,7 @@ class DNDBeyondAPIClient:
         try:
             response = make_request()
         except HTTPError as e:
-            if e.response.status_code == 403:
+            if e.response.status_code in [401, 403]:
                 self._update_access_token()
                 response = make_request()
             else:
